@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const { esc, mmss, clamp, SYM, TIME_LIMIT, MAX_GUESSES, MAX_HINTS, SIM_PLAYERS, DEFAULT_PUZZLES, DICT, score, features, decodePuzzles, freshPuzzles, simulateClass, attemptsAt,
-    exampleRow, classBlock, simBlock, bindSim, whyBlock, store, cleanCode } = window.PL;
+    exampleRow, classBlock, simBlock, bindSim, whyBlock, careersBlock, calpolyBlock, store, cleanCode } = window.PL;
   const $app = document.getElementById('app');
   const qs = new URLSearchParams(location.search);
   const CONFIG = decodePuzzles(qs.get('p')) || DEFAULT_PUZZLES;   // the teacher's words, if the QR carried them
@@ -30,9 +30,9 @@
   function viewEnter() {
     return `<div class="stack" style="gap:18px;padding-top:8px">
     <h1>What makes a word puzzle hard?</h1>
-    <p class="muted">One five-letter word, six guesses, two minutes. Hints appear only after wrong guesses. Then the class's data tells us what made it hard.</p>
+    <p class="muted">One five-letter word, six guesses, two minutes. Hints appear only after wrong guesses. Then the group's data tells us what made it hard.</p>
     <div class="card stack">
-      <label class="f">Class code (from your teacher)<input id="code" autocapitalize="characters" autocomplete="off" maxlength="6" placeholder="e.g. P3" value="${esc(S.code)}"></label>
+      <label class="f">Session code (on the screen)<input id="code" autocapitalize="characters" autocomplete="off" maxlength="6" placeholder="e.g. P3" value="${esc(S.code)}"></label>
       <label class="f">The day of the month you were born (1–31). Just the day.<input id="day" inputmode="numeric" maxlength="2" placeholder="e.g. 14" value="${esc(S.day)}"></label>
       <p class="tiny">The day picks which puzzle you get. We don't ask your name, birthday, or anything else. Nothing leaves this phone.</p>
       <button class="btn primary block" id="go">Get my puzzle</button>
@@ -90,15 +90,15 @@
   }
   function historyBlock() {
     if (S.history.length < 2) return '';
-    return `<div class="card stack"><h3>Your rounds</h3><ol class="history small" style="margin:0;padding-left:20px">${S.history.map(h => `<li><b>${esc(h.word)}</b> (Puzzle ${h.puzzle}): ${h.solved ? 'solved in ' + h.guesses : 'not solved'}, ${h.hintsShown} hint${h.hintsShown === 1 ? '' : 's'}, rated ${h.difficulty}/5</li>`).join('')}</ol><p class="tiny">The class chart above shows the current round only, because each round uses different words.</p></div>`;
+    return `<div class="card stack"><h3>Your rounds</h3><ol class="history small" style="margin:0;padding-left:20px">${S.history.map(h => `<li><b>${esc(h.word)}</b> (Puzzle ${h.puzzle}): ${h.solved ? 'solved in ' + h.guesses : 'not solved'}, ${h.hintsShown} hint${h.hintsShown === 1 ? '' : 's'}, rated ${h.difficulty}/5</li>`).join('')}</ol><p class="tiny">The chart above shows the current round only, because each round uses different words.</p></div>`;
   }
   function viewResults() {
-    const tabs = [['class', 'Our class'], ['sim', '1,000 words'], ['why', 'Why it matters']];
+    const tabs = [['class', 'Our group'], ['sim', '1,000 words'], ['why', 'Why it matters'], ['next', 'Careers & Cal Poly']];
     const res = { puzzles: S.puzzles, attempts: attemptsAt(S.sims, Infinity).concat([S.results]) };
-    return `<h2>${S.resultsTab === 'class' ? 'What the class found' : S.resultsTab === 'sim' ? 'A bigger dataset' : 'Why this matters'}</h2>
+    return `<h2>${S.resultsTab === 'class' ? 'What the group found' : S.resultsTab === 'sim' ? 'A bigger dataset' : S.resultsTab === 'why' ? 'Why this matters' : 'What comes next'}</h2>
   <div class="tabs">${tabs.map(([k, l]) => `<button class="tab" data-tab="${k}" aria-pressed="${S.resultsTab === k}">${l}</button>`).join('')}</div>
-  ${S.resultsTab === 'class' ? classBlock(res, S.pid, false) + historyBlock() : S.resultsTab === 'sim' ? simBlock(S, false, [S.puzzles.A.word, S.puzzles.B.word]) : whyBlock()}
-  ${S.resultsTab !== 'why' ? `<button class="btn block" id="nextTab">${S.resultsTab === 'class' ? 'Zoom out to 1,000 words' : 'Why this matters'}</button>` : ''}
+  ${S.resultsTab === 'class' ? classBlock(res, S.pid, false) + historyBlock() : S.resultsTab === 'sim' ? simBlock(S, false, [S.puzzles.A.word, S.puzzles.B.word]) : S.resultsTab === 'why' ? whyBlock() : `<div class="student-outreach">${careersBlock()}${calpolyBlock()}</div>`}
+  ${S.resultsTab !== 'next' ? `<button class="btn block" id="nextTab">${S.resultsTab === 'class' ? 'Zoom out to 1,000 words' : S.resultsTab === 'sim' ? 'Why this matters' : 'Careers & Cal Poly'}</button>` : ''}
   <button class="btn ghost block" id="again">Play again with a new word</button>`;
   }
 
@@ -124,7 +124,7 @@
     }
     if (S.step === 'results') {
       $app.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { S.resultsTab = b.dataset.tab; render(); window.scrollTo(0, 0); }));
-      q('#nextTab')?.addEventListener('click', () => { S.resultsTab = S.resultsTab === 'class' ? 'sim' : 'why'; render(); window.scrollTo(0, 0); });
+      q('#nextTab')?.addEventListener('click', () => { S.resultsTab = S.resultsTab === 'class' ? 'sim' : S.resultsTab === 'sim' ? 'why' : 'next'; render(); window.scrollTo(0, 0); });
       q('#again')?.addEventListener('click', playAgain);
       bindSim($app, S, rerender);
     }
@@ -142,7 +142,7 @@
     const day = parseInt(S.day, 10);
     if (!(day >= 1 && day <= 31)) { S.error = 'Enter the day of the month you were born, 1 to 31.'; rerender(); return; }
     S.code = cleanCode(S.code);
-    if (!S.code) { S.error = 'Enter the class code.'; rerender(); return; }
+    if (!S.code) { S.error = 'Enter the session code shown on the screen.'; rerender(); return; }
     S.group = day % 2 === 0 ? 'A' : 'B'; S.error = null;
     newRound({ A: { word: CONFIG.A.word, hints: CONFIG.A.hints.slice() }, B: { word: CONFIG.B.word, hints: CONFIG.B.hints.slice() } });
     render(); window.scrollTo(0, 0);

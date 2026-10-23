@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const { esc, vowels, repeats, mmss, TIME_LIMIT, MAX_HINTS, SIM_PLAYERS, BANK, DEFAULT_PUZZLES, DICT, cleanPuzzles, encodePuzzles, studentUrl, simulateClass, progressAt, attemptsAt,
-    exampleRow, classBlock, simBlock, bindSim, whyBlock, wrapBlock, toCSV, store, cleanCode } = window.PL;
+    exampleRow, classBlock, simBlock, bindSim, whyBlock, wrapBlock, careersBlock, calpolyBlock, toCSV, store, cleanCode } = window.PL;
   const $app = document.getElementById('app');
   const CFG_KEY = 'pl_teacher_cfg';
   const isFile = location.protocol === 'file:';
@@ -15,24 +15,25 @@
   }
   const saved = store.get(CFG_KEY, {});
   const T = { tab: 'present', code: cleanCode(saved.code) || 'P1', puzzles: cleanPuzzles(saved.puzzles), base: saved.base || defaultStudentUrl(), nSim: saved.nSim || SIM_PLAYERS, variant: saved.variant || 0,
-    stage: 1, t10: 0, t10run: false, t2: TIME_LIMIT, t2run: false, simT: 0, simRun: false, sims: [], msg: null, err: null, xAxis: 'fam', trend: true, sel: null, find: '', draft: null };
-  const STAGES = [[1, '0:00', 'Intro & assign'], [2, '1:00', 'Play (live)'], [3, '3:00', 'Rate'], [4, '4:00', 'Class results'], [5, '6:00', '1,000 words'], [6, '8:00', 'Discuss'], [7, '9:00', 'Wrap-up']];
+    stage: 1, t2: TIME_LIMIT, t2run: false, simT: 0, simRun: false, simEnd: 0, sims: [], msg: null, err: null, xAxis: 'fam', trend: true, sel: null, find: '', draft: null };
+  const STAGES = [[1, 'Welcome'], [2, 'Play (live)'], [3, 'Rate'], [4, 'Results'], [5, '1,000 words'], [6, 'Discuss'], [7, 'Wrap-up'], [8, 'Careers'], [9, 'Cal Poly']];
 
   function persist() { store.set(CFG_KEY, { code: T.code, puzzles: T.puzzles, base: T.base, nSim: T.nSim, variant: T.variant }); }
-  function regen() { T.sims = simulateClass(T.puzzles, T.nSim, T.variant); }
+  function regen() { T.sims = simulateClass(T.puzzles, T.nSim, T.variant); T.simEnd = Math.max(0, ...T.sims.map(s => s.submitAt).filter(isFinite)) + 1; }
   const link = () => studentUrl(T.base, T.code, T.puzzles, T.nSim, T.variant);
   const simClock = () => T.stage >= 4 ? Infinity : T.simT;
+  let lastSig = '';
   const results = t => ({ puzzles: T.puzzles, attempts: attemptsAt(T.sims, t == null ? simClock() : t), progress: progressAt(T.sims, t == null ? simClock() : t) });
 
   /* ---------- render ---------- */
   function render() {
     const tabs = [['present', 'Present'], ['setup', 'Setup'], ['data', 'Data']];
     $app.innerHTML = `<div class="stack fade">
-    <div class="brand"><b>Puzzle Lab <span class="muted" style="font-weight:400">· teacher</span></b><div class="row"><span class="pill">Class <b>${esc(T.code)}</b></span><span class="pill warn">${T.sims.length} simulated players</span></div></div>
+    <div class="brand"><b>Puzzle Lab <span class="muted" style="font-weight:400">· teacher</span></b><div class="row"><span class="pill">Code <b>${esc(T.code)}</b></span><span class="pill warn">${T.sims.length} simulated players</span></div></div>
     <div class="tabs">${tabs.map(([k, l]) => `<button class="tab" data-tab="${k}" aria-pressed="${T.tab === k}">${l}</button>`).join('')}</div>
     ${T.msg ? `<div class="notice info">${esc(T.msg)}</div>` : ''}${T.err ? `<div class="err">${esc(T.err)}</div>` : ''}
     ${T.tab === 'setup' ? viewSetup() : T.tab === 'data' ? viewData() : viewPresent()}</div>`;
-    bind();
+    bind(); lastSig = simSig();
   }
   function rerender() { const y = window.scrollY; render(); window.scrollTo(0, y); }
 
@@ -45,8 +46,8 @@
     <p class="tiny">${vowels(p[k].word)} vowels · ${repeats(p[k].word)} repeated · ${p[k].word.length === 5 && DICT.has(p[k].word) ? 'in word list' : '<span style="color:var(--bad)">not in word list</span>'}. Students see no hint until they miss; each miss reveals the next hint, up to ${MAX_HINTS}.</p></div>`;
     return `<div class="setupgrid">
     <div class="stack">
-      <div class="card stack"><h3>Class</h3>
-        <label class="f">Class code (shown on the projector; students type it)<input id="code" maxlength="6" autocapitalize="characters" value="${esc(T.code)}" style="max-width:200px"></label>
+      <div class="card stack"><h3>Session</h3>
+        <label class="f">Session code (shown on the screen; students type it if they can't scan)<input id="code" maxlength="6" autocapitalize="characters" value="${esc(T.code)}" style="max-width:200px"></label>
         <label class="f">Student app address (the QR code points here)<input id="base" value="${esc(T.base)}"></label>
         ${isFile ? `<div class="notice">This page was opened from a file, so phones can't reach it. Serve the project folder over the web (for example <code>python3 -m http.server</code> in the project folder, or any static host) and open the teacher app from that address; the student address then fills in automatically.</div>` : ''}
         <div class="eyebrow">Link students will open</div><p class="urlbox muted">${esc(link())}</p>
@@ -60,7 +61,7 @@
       </div>
     </div>
     <div class="stack">${pz('A')}${pz('B')}
-      <div class="row"><button class="btn primary" id="save">Save class settings</button><button class="btn ghost" id="reset">Reset to defaults</button></div>
+      <div class="row"><button class="btn primary" id="save">Save settings</button><button class="btn ghost" id="reset">Reset to defaults</button></div>
       <p class="tiny">Saving regenerates the simulated class and the QR code. Settings stay in this browser.</p></div></div>`;
   }
   function viewData() {
@@ -86,19 +87,20 @@
   }
   function viewPresent() {
     const r = results(); const st = T.stage;
-    const stageBar = `<div class="chips">${STAGES.map(([n, t, l]) => `<button class="chip" data-stage="${n}" aria-pressed="${st === n}"><span class="num muted">${t}</span>&nbsp;${l}</button>`).join('')}</div>`;
-    const timers = `<div class="card row spread"><div class="row" style="gap:16px"><div><div class="eyebrow">Activity clock</div><div class="timer num" id="t10">${mmss(T.t10)}</div></div><button class="btn sm" id="t10go">${T.t10run ? 'Pause' : 'Start'}</button><button class="btn sm ghost" id="t10reset">Reset</button></div>
-    <div class="row" style="gap:16px"><div><div class="eyebrow">Play timer (2:00)</div><div class="timer num ${T.t2 <= 20 ? 'low' : ''}" id="t2">${mmss(T.t2)}</div></div><button class="btn sm" id="t2go">${T.t2run ? 'Pause' : 'Start'}</button><button class="btn sm ghost" id="t2reset">Reset</button></div>
+    const stageBar = `<div class="chips">${STAGES.map(([n, l]) => `<button class="chip" data-stage="${n}" aria-pressed="${st === n}">${l}</button>`).join('')}</div>`;
+    const timers = `<div class="card row spread"><div class="row" style="gap:16px"><div><div class="eyebrow">Play timer (2:00)</div><div class="timer num ${T.t2 <= 20 ? 'low' : ''}" id="t2">${mmss(T.t2)}</div></div><button class="btn sm" id="t2go">${T.t2run ? 'Pause' : 'Start'}</button><button class="btn sm ghost" id="t2reset">Reset</button></div>
     <div><div class="eyebrow">Submitted</div><div class="timer num" id="nsub">${r.attempts.length}</div></div></div>`;
     let body = '';
-    if (st === 1) body = `<div class="cols"><div class="card stack present"><h2>Scan or type the class code</h2><div class="codebig">${esc(T.code)}</div><div id="qrbox" class="qrbox"></div><p class="muted small urlbox">${esc(link())}</p>${isFile ? '<p class="notice">Opened from a file: phones can\'t reach this address. See Setup.</p>' : ''}</div>
+    if (st === 1) body = `<div class="cols"><div class="card stack present"><h2>Scan the QR code, or type the code</h2><div class="codebig">${esc(T.code)}</div><div id="qrbox" class="qrbox"></div><p class="muted small urlbox">${esc(link())}</p>${isFile ? '<p class="notice">Opened from a file: phones can\'t reach this address. See Setup.</p>' : ''}</div>
     <div class="card stack present"><h2>Can you crack a five-letter word?</h2><p>Type the <b>day of the month you were born</b>. That picks your puzzle: A or B.</p><p>6 guesses · 2 minutes · real words only · <b>no hint until you miss</b>; each wrong guess reveals one, up to ${MAX_HINTS}.</p>${exampleRow('TRACK', 'CRANE')}<p class="small">If the word were CRANE and you guessed TRACK: ✓ placed, ~ in the word elsewhere, ✕ not in the word.</p></div></div>`;
     else if (st === 2) body = `<div class="card stack present" style="text-align:center;padding:24px 16px"><h2>Play!</h2><div class="big num ${T.t2 <= 20 ? 'low' : ''}" id="t2big">${mmss(T.t2)}</div></div>${liveBoard(r)}`;
     else if (st === 3) body = `<div class="card stack present" style="text-align:center;padding:30px 16px"><h2>Rate it, then submit</h2><p>How difficult did it feel (1–5)? How helpful were the hints (1–5)?</p><p class="muted">Submitted: <b class="num">${r.attempts.length}</b> of ${r.progress.length} who played</p></div>`;
     else if (st === 4) body = `<div class="present">${classBlock(r, null, true)}</div>`;
     else if (st === 5) body = `<div class="present">${simBlock(T, true, [T.puzzles.A.word, T.puzzles.B.word])}</div>`;
     else if (st === 6) body = `<div class="present">${whyBlock()}</div>`;
-    else body = wrapBlock(r);
+    else if (st === 7) body = wrapBlock(r);
+    else if (st === 8) body = careersBlock();
+    else body = calpolyBlock();
     return `${stageBar}${timers}${body}`;
   }
 
@@ -107,8 +109,6 @@
     const q = s => $app.querySelector(s);
     $app.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { T.tab = b.dataset.tab; T.msg = T.err = null; T.draft = null; render(); window.scrollTo(0, 0); }));
     $app.querySelectorAll('[data-stage]').forEach(b => b.addEventListener('click', () => { T.stage = +b.dataset.stage; if (T.stage === 2 && !T.t2run && T.t2 === TIME_LIMIT) { T.t2run = true; T.simRun = true; } if (T.stage >= 4) T.simT = Math.max(T.simT, 9999); render(); window.scrollTo(0, 0); }));
-    q('#t10go')?.addEventListener('click', () => { T.t10run = !T.t10run; rerender(); });
-    q('#t10reset')?.addEventListener('click', () => { T.t10 = 0; T.t10run = false; rerender(); });
     q('#t2go')?.addEventListener('click', () => { T.t2run = !T.t2run; T.simRun = T.t2run; rerender(); });
     q('#t2reset')?.addEventListener('click', () => { T.t2 = TIME_LIMIT; T.t2run = false; T.simRun = false; T.simT = 0; rerender(); });
     if (T.tab === 'present') { bindSim($app, T, rerender); if (T.stage === 1) drawQR(); }
@@ -136,15 +136,17 @@
     $app.querySelectorAll('[data-p]').forEach(i => { const [k, f] = i.dataset.p.split('.'); if (f === 'word') p[k].word = i.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5); else p[k].hints[+f.slice(1)] = i.value; });
     return p;
   }
+  /* One tick per second. The timers update in place; the page re-renders only when a simulated player's state actually
+     changed (a guess, a finish, a submission), and the simulation clock stops once everyone has submitted. */
+  const simSig = () => { const r = results(); return T.stage + ':' + r.attempts.length + ':' + (T.stage === 2 ? r.progress.map(p => p.guesses + (p.done ? 'd' : '')).join('') : ''); };
   function tick() {
-    if (T.t10run) T.t10++;
     let ended = false; if (T.t2run && T.t2 > 0) { T.t2--; if (T.t2 === 0) { T.t2run = false; ended = true; } }
-    if (T.simRun) T.simT++;
-    const a = $app.querySelector('#t10'); if (a) a.textContent = mmss(T.t10);
+    if (T.simRun) { T.simT++; if (T.simT > T.simEnd) T.simRun = false; }
     const b = $app.querySelector('#t2'); if (b) { b.textContent = mmss(T.t2); b.classList.toggle('low', T.t2 <= 20); }
     const c = $app.querySelector('#t2big'); if (c) { c.textContent = mmss(T.t2); c.classList.toggle('low', T.t2 <= 20); }
-    if (ended || (T.simRun && T.tab === 'present' && (T.stage === 2 || T.stage === 3))) rerender();
-    else { const n = $app.querySelector('#nsub'); if (n) n.textContent = results().attempts.length; }
+    const n = $app.querySelector('#nsub'); if (n) n.textContent = results().attempts.length;
+    if (T.tab !== 'present' || !(T.stage === 2 || T.stage === 3)) return;
+    const sig = simSig(); if (ended || sig !== lastSig) { lastSig = sig; rerender(); }
   }
   function drawQR() {
     const box = $app.querySelector('#qrbox'); if (!box) return; box.innerHTML = '';

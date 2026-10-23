@@ -10,7 +10,7 @@ assets/css/             base.css (shared), teacher.css, student.css
 assets/js/core.js       game logic, simulated class, charts, lesson text (shared)
 assets/js/teacher.js    teacher app
 assets/js/student.js    student app
-assets/js/data/         dict.js (12,972 valid guesses), words1000.js (1,000-word dataset), bank.js (32 words with 4 hints each)
+assets/js/data/         dict.js (12,972 valid guesses), words1000.js (1,000-word dataset), bank.js (32 words with 4 hints each), outreach.js (careers + Cal Poly text)
 assets/js/vendor/       qrcode.min.js (QR generator, works offline)
 legacy/                 the old Google Apps Script version (Code.gs, Index.html), kept for reference only
 ```
@@ -36,40 +36,44 @@ python3 -m http.server 8000
 
 Then open `http://<this laptop's IP>:8000/teacher/` in the browser. The teacher app fills in the student address automatically from its own address; check it on the Setup tab. If you opened the file directly (address starts with `file://`), the QR code can't work, and the app says so.
 
-## Before class (3 minutes)
+## Before the session (3 minutes)
 
-1. Teacher app → **Setup**. Set the class code (e.g. `P3`).
+1. Teacher app → **Setup**. Set the session code (e.g. `P3`).
 2. Pick the words. Defaults are TRAIN (A, specific hints) and APPLE (B, vague hints). "Fill from bank" loads a word with its four hints; you can edit any hint. Words must be in Wordle's word list.
 3. Optionally change the number of simulated players or shuffle them.
-4. **Save class settings.** The QR code and the simulated class now use these words.
+4. **Save settings.** The QR code and the simulated class now use these words.
 
-## In class: the 10 minutes
+## Running the session
 
-Teacher app → **Present**. Click a stage; content and timers are projector-sized.
+Teacher app → **Present**. Click a stage; content and the play timer are projector-sized. Stages, in order:
 
-| Stage | Clock | On the projector | Students |
-|---|---|---|---|
-| Intro & assign | 0:00 | Class code + QR code, the rules, the feedback example | Scan, enter birthday day, read the example |
-| Play (live) | 1:00 | Big 2:00 timer (auto-starts) and the live board: simulated players guess, solve, or time out in step with the timer | Play (their phone has its own 2:00) |
-| Rate | 3:00 | "Submitted" counter climbs as simulated players finish rating | Two 1–5 ratings, Submit |
-| Class results | 4:00 | Dot plot A vs B, solve rates, hints seen, discussion prompts, the two-things-changed caveat | Same on their phone, with their own dot in green |
-| 1,000 words | 6:00 | 1,000 real Wordle answers; real features on the x-axis, simulated ratings on the y-axis; your two words marked | Same, on the "1,000 words" tab |
-| Discuss | 8:00 | Outcome / feature / variation; the final question | "Why it matters" tab |
-| Wrap-up | 9:00 | Six-point recap with the class's averages and solve rates filled in, the three words to keep, the exit question | Play again with a new word, if there is time |
+| Stage | On the screen | Students |
+|---|---|---|
+| Welcome | Session code + QR code, the rules, the feedback example | Scan, enter birthday day, read the example |
+| Play (live) | Big 2:00 timer (auto-starts) and the live board: simulated players guess, solve, or time out in step with the timer | Play (their phone has its own 2:00) |
+| Rate | "Submitted" counter climbs as simulated players finish rating | Two 1–5 ratings, Submit |
+| Results | Dot plot A vs B, solve rates, hints seen, discussion prompts, the two-things-changed caveat | Same on their phone, with their own dot in green |
+| 1,000 words | 1,000 real Wordle answers; real features on the x-axis, simulated ratings on the y-axis; your two words marked | Same, on the "1,000 words" tab |
+| Discuss | Outcome / feature / variation; the final question | "Why it matters" tab |
+| Wrap-up | Six-point recap with the group's averages and solve rates filled in, the three words to keep, the exit question | Play again with a new word, if there is time |
+| Careers | Where data scientists and statisticians work and what they like about it | "Careers & Cal Poly" tab |
+| Cal Poly | What studying statistics or data science at Cal Poly is like, and why | Same tab |
+
+The Careers and Cal Poly text lives in `assets/js/data/outreach.js`. Edit it there; check pay figures and program details before each event.
 
 The **Data** tab shows every simulated attempt and downloads it as CSV (same columns as before: code, participant_id, puzzle, word, guesses, solved, elapsed_seconds, hints_shown, rated_difficulty, rated_hint_helpfulness, word_length, vowel_count, repeated_letter_count, simulated).
 
 ## Test checklist
 - [ ] Teacher Setup: a word not in the list (ZZZZZ) is refused; A and B must differ; all four hints required.
-- [ ] Teacher Present → Intro shows a QR code; scanning it opens the student app with the class code filled in and the teacher's words.
+- [ ] Teacher Present → Welcome shows a QR code; scanning it opens the student app with the class code filled in and the teacher's words.
 - [ ] Student: even day gives Puzzle A, odd gives B (words never labeled easy/hard).
 - [ ] Student: no hint before the first guess; Hint 1 appears after the first wrong guess; Hint 4 after the fourth; nothing more after that.
 - [ ] Typing a non-word (ZZZZZ) shows "Not in word list" and doesn't use a guess.
 - [ ] "Give up" asks for confirmation; time-out, give-up, and six misses all count as not solved.
 - [ ] Rate screen shows "hints shown"; Submit shows the class with your dot in green and "1 real + N simulated".
 - [ ] "Play again with a new word" never repeats a word already shown on that phone (both A and B words of every round count as shown). After the bank runs out, the app says words may repeat.
-- [ ] Teacher Present → Play (live): start the play timer; squares fill in over the two minutes; the Submitted counter rises during Rate; Class results shows everyone.
-- [ ] The teacher's Class results and a phone that scanned the QR code show the same simulated dots.
+- [ ] Teacher Present → Play (live): start the play timer; squares fill in over the two minutes; the Submitted counter rises during Rate; Results shows everyone. The page only redraws when a simulated player's state changes.
+- [ ] The teacher's Results stage and a phone that scanned the QR code show the same simulated dots.
 
 ## Notes
 - The 1,000-word scatterplot uses the first 1,000 words of Wordle's official answer list with **real** features (word familiarity from word-frequency data, vowels, repeated letters, rare letters) and **simulated** difficulty ratings, labeled as such everywhere it appears.

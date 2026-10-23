@@ -170,7 +170,7 @@ window.PL = (function () {
     <div class="card stack">
       <div class="row spread"><h3>How hard did each group find it?</h3>${live ? `<span class="pill warn">${live} real + ${att.length - live} simulated</span>` : '<span class="pill warn">simulated class</span>'}</div>
       ${att.length ? dotPlot(att, pid, { w: present ? 760 : 520, h: present ? 360 : 300 }) : '<p class="muted">No responses yet.</p>'}
-      <p class="small muted">Each dot is one student. Higher dots mean the student rated the puzzle as harder. The green line is each group's average.${!present && att.some(a => a.participantId === pid) ? ' Your dot is green.' : ''}</p>
+      <p class="small muted">Each dot is one player. Higher dots mean the student rated the puzzle as harder. The green line is each group's average.${!present && att.some(a => a.participantId === pid) ? ' Your dot is green.' : ''}</p>
       <div class="cols"><div><div class="eyebrow">Puzzle A</div>${stats('A')}</div><div><div class="eyebrow">Puzzle B</div>${stats('B')}</div></div>
       <p class="tiny">"Solved" means the word was found within 6 guesses and 2 minutes. Running out of time, giving up, or using all six guesses counts as not solved, never as a six-guess win. Hints appeared one at a time after each wrong guess, up to ${MAX_HINTS}.</p>
     </div>
@@ -226,6 +226,21 @@ window.PL = (function () {
     <div class="notice info"><b>Exit question:</b> to predict how hard a brand-new word will be, what would you collect, from whom, and what would you keep the same?</div></div>`;
   }
 
+  /* Closing stages: careers, then Cal Poly. Text lives in assets/js/data/outreach.js. */
+  function outreachList(section) {
+    const o = window.PL_OUTREACH[section];
+    return `<div class="card stack present"><h2>${esc(o.heading)}</h2><p class="muted">${esc(o.intro)}</p>
+    <div class="cols tight">${o.items.map(i => `<div class="hint"><b>${esc(i.title)}</b><span>${esc(i.text)}</span></div>`).join('')}</div></div>`;
+  }
+  function careersBlock() {
+    const o = window.PL_OUTREACH.careers;
+    return `${outreachList('careers')}<div class="card stack present"><h3>${esc(o.perks.heading)}</h3><ul class="wrap" style="margin:0;padding-left:22px">${o.perks.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul><div class="notice info"><b>${esc(o.ask)}</b></div></div>`;
+  }
+  function calpolyBlock() {
+    const o = window.PL_OUTREACH.calpoly;
+    return `${outreachList('calpoly')}<div class="card stack present"><h3>${esc(o.benefits.heading)}</h3><ul class="wrap" style="margin:0;padding-left:22px">${o.benefits.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul><div class="notice info"><b>${esc(o.ask)}</b></div></div>`;
+  }
+
   /* CSV of attempt rows (same columns the old Google Sheet had). */
   function toCSV(code, attempts) {
     const cols = ['code', 'participant_id', 'puzzle', 'word', 'guesses', 'solved', 'elapsed_seconds', 'hints_shown', 'rated_difficulty', 'rated_hint_helpfulness', 'word_length', 'vowel_count', 'repeated_letter_count', 'simulated'];
@@ -243,5 +258,5 @@ window.PL = (function () {
 
   return { esc, vowels, repeats, mmss, mean, clamp, SYM, TIME_LIMIT, MAX_GUESSES, MAX_HINTS, SIM_PLAYERS, BANK, DEFAULT_PUZZLES, DICT, WORDS, score, features,
     cleanPuzzle, cleanPuzzles, encodePuzzles, decodePuzzles, studentUrl, freshPuzzles, simulateClass, progressAt, attemptsAt, summarize, dotPlot, scatter, AXES,
-    exampleRow, puzzleCard, classBlock, simExplainer, simBlock, bindSim, whyBlock, wrapBlock, toCSV, store, cleanCode };
+    exampleRow, puzzleCard, classBlock, simExplainer, simBlock, bindSim, whyBlock, wrapBlock, careersBlock, calpolyBlock, toCSV, store, cleanCode };
 })();

@@ -107,6 +107,15 @@ svg .bar{fill:var(--data2)}
 .ask div{padding:10px 12px;background:var(--panel2);border-left:4px solid var(--accent)}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
 .cols>*{min-width:0}
+.cols.tight{gap:10px}
+.cols.tight .hint{flex-direction:column;gap:4px}
+.present .cols.tight .hint span{font-size:clamp(15px,1.6vw,20px);line-height:1.4}
+/* the student app shows the outreach blocks at phone size, not projector size */
+.student-outreach .present{font-size:16px}
+.student-outreach .present h2{font-size:clamp(22px,5.5vw,28px)}
+.student-outreach .present h3{font-size:17px}
+.student-outreach .present p,.student-outreach .present li,.student-outreach .present .hint span{font-size:14px}
+.student-outreach .present .ask div{font-size:14px}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--fg3);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
