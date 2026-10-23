@@ -1,0 +1,17 @@
+/* Puzzle Lab — student app only: on-screen keyboard, rating scales, hint list. */
+.kb{display:flex;flex-direction:column;gap:6px;user-select:none}
+.kb .kr{display:flex;gap:5px;justify-content:center}
+.key{flex:1;max-width:43px;min-height:54px;border-radius:4px;background:var(--key);color:var(--fg);font-weight:800;font-size:14px;display:grid;place-items:center}
+.key.wide{max-width:66px;flex:1.5;font-size:11px}
+.key.ok{background:var(--ok);color:var(--ok-ink)}
+.key.near{background:var(--near);color:var(--near-ink)}
+.key.no{background:var(--no);color:var(--no-ink)}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale button{min-height:54px;border-radius:4px;background:var(--panel2);border:1px solid var(--line);font-weight:800;font-size:22px}
+.scale button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.scale-ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--fg3)}
+.hints{display:flex;flex-direction:column;gap:6px}
+.hint.new{animation:hintin .35s ease}
+@keyframes hintin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hint.new{animation:none}}
+.history li{margin-bottom:4px}

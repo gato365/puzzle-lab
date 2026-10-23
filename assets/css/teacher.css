@@ -1,0 +1,15 @@
+/* Puzzle Lab — teacher app only: projector-sized class code, QR box, live board, setup grid. */
+.codebig{font-weight:800;font-size:clamp(40px,8vw,96px);letter-spacing:.12em}
+.qrbox{background:#fff;padding:12px;display:inline-block;border-radius:6px;line-height:0}
+.qrbox img,.qrbox canvas{width:min(100%,280px);height:auto}
+.live{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.live>*{min-width:0}
+.mini{display:flex;flex-wrap:wrap;gap:4px}
+.mini span{width:30px;height:30px;display:grid;place-items:center;font-size:12px;font-weight:800;border-radius:3px;background:var(--panel2);border:1px solid var(--line)}
+.mini span.done{background:var(--ok);color:var(--ok-ink);border-color:var(--ok)}
+.mini span.fail{background:var(--no);color:var(--no-ink);border-color:var(--no)}
+.setupgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.setupgrid>*{min-width:0}
+.hintfields{display:flex;flex-direction:column;gap:6px}
+.hintfields input{min-height:40px;padding:6px 10px;font-size:14px}
+.urlbox{word-break:break-all;font-size:14px}
